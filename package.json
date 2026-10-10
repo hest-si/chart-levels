@@ -1,0 +1,42 @@
+{
+  "name": "chart-levels",
+  "version": "0.1.0",
+  "description": "Support, resistance, trend channels, volume nodes and RSI divergence from raw candles - zero dependencies, with a TradingView Lightweight Charts adapter.",
+  "keywords": [
+    "technical-analysis",
+    "support-resistance",
+    "lightweight-charts",
+    "tradingview",
+    "regression-channel",
+    "volume-profile",
+    "rsi-divergence",
+    "trading"
+  ],
+  "license": "MIT",
+  "author": "hest-si",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hest-si/chart-levels.git"
+  },
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "npm run build && node --test test/analyze.test.mjs",
+    "prepublishOnly": "npm test"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0"
+  }
+}

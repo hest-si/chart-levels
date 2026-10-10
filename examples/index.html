@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>chart-levels demo</title>
+<style>
+  body{margin:0;background:#0e0e0e;color:#ddd;font:14px system-ui}
+  header{display:flex;gap:14px;align-items:baseline;padding:14px 18px}
+  h1{font-size:16px;margin:0}
+  small{color:#888}
+  #chart{height:560px;margin:0 12px 8px}
+  #row{display:flex;flex-wrap:wrap;gap:8px;padding:0 18px 18px;font-size:12.5px;color:#aaa}
+  #row span{border:1px solid #2a2a2a;border-radius:999px;padding:4px 10px}
+  #row b{color:#eee}
+</style>
+</head>
+<body>
+<header><h1>chart-levels</h1><small>BTC/USDT 1h from Binance public klines; run <code>npm run build</code> first, then serve this folder.</small></header>
+<div id="chart"></div>
+<div id="row"></div>
+<script src="https://unpkg.com/lightweight-charts@5.2.1/dist/lightweight-charts.standalone.production.js"></script>
+<script type="module">
+import { analyze, attachLevels } from '../dist/index.js';
+
+const L = window.LightweightCharts;
+const chart = L.createChart(document.getElementById('chart'), {
+  layout: { background: { type: 'solid', color: '#0e0e0e' }, textColor: '#999' },
+  grid: { vertLines: { color: '#1c1c1c' }, horzLines: { color: '#1c1c1c' } },
+  rightPriceScale: { borderColor: '#2a2a2a' }, timeScale: { borderColor: '#2a2a2a' },
+});
+const price = chart.addSeries(L.CandlestickSeries, { upColor: '#6fe0a6', downColor: '#ff7d93', wickUpColor: '#6fe0a6', wickDownColor: '#ff7d93', borderVisible: false });
+
+const raw = await fetch('https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1h&limit=400').then((r) => r.json());
+const candles = raw.map((k) => ({ t: k[0] / 1000, o: +k[1], h: +k[2], l: +k[3], c: +k[4], v: +k[5] }));
+price.setData(candles.map((c) => ({ time: c.t, open: c.o, high: c.h, low: c.l, close: c.c })));
+
+const a = analyze(candles, { stepSeconds: 3600 });
+attachLevels(chart, price, { lineSeries: L.LineSeries }).update(a);
+
+if (a) {
+  const f = (x) => '$' + x.toLocaleString('en-US', { maximumFractionDigits: 1 });
+  document.getElementById('row').innerHTML = [
+    `Trend <b>${a.trend.dir}</b> ${a.trend.slopeDay >= 0 ? '+' : ''}${a.trend.slopeDay.toFixed(1)}%/day`,
+    `Fit R² <b>${a.trend.r2.toFixed(2)}</b>`,
+    a.sup.length ? `Support <b>${a.sup.map(f).join(' · ')}</b>` : '',
+    a.res.length ? `Resistance <b>${a.res.map(f).join(' · ')}</b>` : '',
+    a.poc != null ? `Vol Node <b>${f(a.poc)}</b>` : '',
+    `24h range <b>±${a.bandPct.toFixed(1)}%</b>`,
+    `RSI <b>${a.rsi}</b>`,
+    a.div ? `<b>${a.div} RSI divergence</b>` : '',
+  ].filter(Boolean).map((s) => `<span>${s}</span>`).join('');
+}
+chart.timeScale().fitContent();
+</script>
+</body>
+</html>
